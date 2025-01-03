@@ -1,4 +1,4 @@
-name: URL Speed Test with Channel Preservation
+name: URL Speed Test with Channel Preservation and Top 20 URLs
 
 # 控制触发此工作流的时间表
 on:
@@ -66,14 +66,15 @@ jobs:
         for channel, url, speed in results:
             grouped_results[channel].append((url, speed))
         
-        sorted_grouped_results = {
-            channel: sorted(urls, key=lambda x: (x[1] is None, x[1]))
+        # 在每个频道内选择最快的速度前20个
+        top_20_per_channel = {
+            channel: sorted(urls, key=lambda x: (x[1] is None, x[1]))[:20]
             for channel, urls in grouped_results.items()
         }
 
         # 输出结果到文件
         with open('speed-live.txt', 'w') as f:
-            for channel, urls in sorted_grouped_results.items():
+            for channel, urls in top_20_per_channel.items():
                 for url, speed in urls:
                     f.write(f"{channel},{url}:{speed:.4f} seconds\n" if speed is not None else f"{channel},{url}: Failed\n")
 
