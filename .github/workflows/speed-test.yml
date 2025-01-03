@@ -12,10 +12,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Python environment
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
 
@@ -30,6 +30,7 @@ jobs:
         import requests
         from time import time
         from operator import itemgetter
+        from collections import defaultdict
 
         # 下载live.txt文件并解析
         response = requests.get('https://raw.githubusercontent.com/haotiandao/test2/main/live.txt')
@@ -61,7 +62,6 @@ jobs:
                 results.append((channel, url, speed))
 
         # 将结果按频道分组，并在每组内按速度排序
-        from collections import defaultdict
         grouped_results = defaultdict(list)
         for channel, url, speed in results:
             grouped_results[channel].append((url, speed))
@@ -80,7 +80,7 @@ jobs:
         print("Speed test completed and results saved.")
 
     - name: Upload speed-live.txt as artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: speed-live
         path: speed-live.txt
