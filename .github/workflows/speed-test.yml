@@ -1,0 +1,86 @@
+name: URL Speed Test with Channel Preservation
+
+# 控制触发此工作流的时间表
+on:
+  schedule:
+    - cron: '0 6 * * *'  # 每天凌晨6点执行
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  speed-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Setup Python environment
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: Download live.txt and test URLs
+      id: test_speeds
+      run: |
+        import requests
+        from time import time
+        from operator import itemgetter
+
+        # 下载live.txt文件并解析
+        response = requests.get('https://raw.githubusercontent.com/haotiandao/test2/main/live.txt')
+        lines = response.text.strip().splitlines()
+        
+        # 初始化结果列表
+        results = []
+
+        # 测速函数
+        def test_speed(url):
+            try:
+                start_time = time()
+                response = requests.head(url, timeout=5)  # 使用HEAD请求以减少数据传输量
+                end_time = time()
+                elapsed_time = end_time - start_time
+                print(f"Tested {url}: {elapsed_time:.4f} seconds")
+                return elapsed_time
+            except Exception as e:
+                print(f"Failed to test {url}: {e}")
+                return None
+
+        # 对每个URL进行测速
+        for line in lines:
+            parts = line.split(',')
+            if len(parts) >= 2:
+                channel = parts[0].strip()
+                url = parts[1].strip()
+                speed = test_speed(url)
+                results.append((channel, url, speed))
+
+        # 将结果按频道分组，并在每组内按速度排序
+        from collections import defaultdict
+        grouped_results = defaultdict(list)
+        for channel, url, speed in results:
+            grouped_results[channel].append((url, speed))
+        
+        sorted_grouped_results = {
+            channel: sorted(urls, key=lambda x: (x[1] is None, x[1]))
+            for channel, urls in grouped_results.items()
+        }
+
+        # 输出结果到文件
+        with open('speed-live.txt', 'w') as f:
+            for channel, urls in sorted_grouped_results.items():
+                for url, speed in urls:
+                    f.write(f"{channel},{url}:{speed:.4f} seconds\n" if speed is not None else f"{channel},{url}: Failed\n")
+
+        print("Speed test completed and results saved.")
+
+    - name: Upload speed-live.txt as artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: speed-live
+        path: speed-live.txt
