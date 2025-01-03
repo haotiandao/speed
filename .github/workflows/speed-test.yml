@@ -33,7 +33,7 @@ jobs:
         from collections import defaultdict
 
         # 下载live.txt文件并解析
-        response = requests.get('https://raw.githubusercontent.com/haotiandao/test2/main/live.txt')
+        response = requests.get('https://haotian.us.kg/https://github.com/haotiandao/test2/blob/main/live.txt')
         lines = response.text.strip().splitlines()
         
         # 初始化结果列表
